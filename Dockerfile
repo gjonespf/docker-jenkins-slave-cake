@@ -2,11 +2,11 @@ FROM gavinjonespf/docker-toolbox:latest
 ENV TERM xterm
 
 ARG apt_proxy
-RUN if [ "${apt_proxy}" != "" ]; then echo "Acquire::http { Proxy \"${apt_proxy}\"; };" > /etc/apt/apt.conf.d/01proxy; fi; cat /etc/apt/apt.conf.d/01proxy
+RUN if [ "${apt_proxy}" != "" ]; then echo "Acquire::http { Proxy \"${apt_proxy}\"; };" > /etc/apt/apt.conf.d/01proxy; cat /etc/apt/apt.conf.d/01proxy; fi; 
 
 #Tools from 
 # https://hub.docker.com/r/evarga/jenkins-slave/
-RUN apt-get install -y locales &&\
+RUN apt-get -q update && apt-get install -y locales &&\
     locale-gen en_US.UTF-8 &&\
     apt-get -q update &&\
     DEBIAN_FRONTEND="noninteractive" apt-get -q upgrade -y -o Dpkg::Options::="--force-confnew" --no-install-recommends &&\
@@ -46,16 +46,21 @@ RUN apt-get -q update &&\
 #RUN mozroots --import --sync
 RUN cert-sync /etc/ssl/certs/ca-certificates.crt
 
-# Nuget install
-RUN	apt-get install -y nuget
 # This includes mono bits, useful for compiling
 RUN yes | certmgr -ssl -m https://go.microsoft.com \
 	&& yes | certmgr -ssl -m https://nugetgallery.blob.core.windows.net \
 	&& yes | certmgr -ssl -m https://nuget.org 
+# Nuget install
+RUN apt-get -q update &&\
+    DEBIAN_FRONTEND="noninteractive" apt-get -y install nuget &&\
+    apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
 
 # DotNet Core install
 # PowerShell Core install
-# As part of toolbox
+# ENV				DOTNET_PACKAGE dotnet-dev-1.0.4
+# ENV 			POWERSHELL_DOWNLOAD_URL https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-beta.2/powershell_6.0.0-beta.2-1ubuntu1.16.04.1_amd64.deb
+# Done as part of toolbox
+
 
 # Cake install
 #RUN curl -Lsfo build.sh http://cakebuild.net/download/bootstrapper/linux && chmod a+x build.sh && ./build.sh
@@ -75,7 +80,7 @@ EXPOSE 22
 CMD [ "/scripts/init.sh" ]
 #CMD ["sudo", "/usr/sbin/sshd", "-D"]
 
-
 # testing
 # docker pull jumanjiman/dotnet:latest
 # docker run --rm -it jumanjiman/dotnet:latest bash
+
