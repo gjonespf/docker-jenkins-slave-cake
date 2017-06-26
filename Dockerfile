@@ -55,6 +55,10 @@ RUN apt-get -q update &&\
     DEBIAN_FRONTEND="noninteractive" apt-get -y install nuget &&\
     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
 
+# Docker user setup, doesn't seem to work correctly
+#RUN     addgroup docker && usermod -a -G docker jenkins
+#adduser jenkins docker
+
 # DotNet Core install
 # PowerShell Core install
 # ENV				DOTNET_PACKAGE dotnet-dev-1.0.4
@@ -67,15 +71,19 @@ RUN apt-get -q update &&\
 
 # Pull PS modules as required
 
+#GOSU instead
+ARG GOSU_VERSION=1.10
+RUN wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-$(dpkg --print-architecture)" \
+    && chmod +x /usr/local/bin/gosu
+
 COPY ./init.sh /scripts/init.sh
 RUN chmod 777 /scripts/init.sh
-USER jenkins
-RUN touch ~/.sudo_as_admin_successful
+COPY ./jenkins-user-setup.sh /scripts/jenkins-user-setup.sh
+RUN chmod 777 /scripts/jenkins-user-setup.sh
+# Need to use gosu instead...
+#USER jenkins
+#RUN touch ~/.sudo_as_admin_successful
 WORKDIR /home/jenkins
-
-
-
-
 EXPOSE 22
 CMD [ "/scripts/init.sh" ]
 #CMD ["sudo", "/usr/sbin/sshd", "-D"]
