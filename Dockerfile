@@ -6,7 +6,7 @@ RUN if [ "${apt_proxy}" != "" ]; then echo "Acquire::http { Proxy \"${apt_proxy}
 
 #Tools from 
 # https://hub.docker.com/r/evarga/jenkins-slave/
-RUN apt-get -q update && apt-get install -y locales &&\
+RUN apt-get -q update && apt-get install -y locales sudo &&\
     locale-gen en_US.UTF-8 &&\
     apt-get -q update &&\
     DEBIAN_FRONTEND="noninteractive" apt-get -q upgrade -y -o Dpkg::Options::="--force-confnew" --no-install-recommends &&\
@@ -81,6 +81,7 @@ RUN chmod 777 /scripts/init.sh
 COPY ./jenkins-user-setup.sh /scripts/jenkins-user-setup.sh
 RUN chmod 777 /scripts/jenkins-user-setup.sh
 # Need to use gosu instead...
+#TODO: Remove sudo?
 #USER jenkins
 #RUN touch ~/.sudo_as_admin_successful
 WORKDIR /home/jenkins
