@@ -34,5 +34,5 @@ then
   gosu jenkins $1
 else
   # Gosu
-  gosu jenkins sudo /usr/sbin/sshd -D
+  /usr/sbin/sshd -D
 fi
