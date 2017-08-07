@@ -4,8 +4,6 @@
 # Feel free to change this file to fit your needs.
 ##########################################################################
 
-# v0.1.1-pre-csv-008 - Testing
-
 <#
 
 .SYNOPSIS
@@ -36,7 +34,7 @@ Skips restoring of packages.
 Remaining arguments are added here.
 
 .LINK
-http://cakebuild.net
+https://cakebuild.net
 
 #>
 
@@ -45,11 +43,10 @@ Param(
     [string]$Script = "build.cake",
     [string]$Target = "Default",
     [ValidateSet("Release", "Debug")]
-    [string]$Configuration = "Debug",
+    [string]$Configuration = "Release",
     [ValidateSet("Quiet", "Minimal", "Normal", "Verbose", "Diagnostic")]
     [string]$Verbosity = "Verbose",
     [switch]$Experimental,
-    [switch]$DebugCake,
     [Alias("DryRun","Noop")]
     [switch]$WhatIf,
     [switch]$Mono,
@@ -58,7 +55,11 @@ Param(
     [string[]]$ScriptArgs
 )
 
-[Reflection.Assembly]::LoadWithPartialName("System.Security") | Out-Null
+if((!$PSVersionTable.PSEdition) -or ($PSVersionTable.PSEdition -ne "Core"))
+{
+    $sysSecurity = [Reflection.Assembly]::LoadWithPartialName("System.Security")
+}
+
 function MD5HashFile([string] $filePath)
 {
     if ([string]::IsNullOrEmpty($filePath) -or !(Test-Path $filePath -PathType Leaf))
@@ -66,20 +67,33 @@ function MD5HashFile([string] $filePath)
         return $null
     }
 
-    [System.IO.Stream] $file = $null;
-    [System.Security.Cryptography.MD5] $md5 = $null;
-    try
+    # Use Get-FileHash if support exists
+    $getHashExists = Get-Command "Get-FileHash"
+    if($getHashExists)
     {
-        $md5 = [System.Security.Cryptography.MD5]::Create()
-        $file = [System.IO.File]::OpenRead($filePath)
-        return [System.BitConverter]::ToString($md5.ComputeHash($file))
-    }
-    finally
+        return Get-FileHash -Path $filePath -Algorithm "MD5"
+    }    
+    # Use System.Security.Cryptography.MD5 for MD5, if it exists
+    elseif($sysSecurity) 
     {
-        if ($file -ne $null)
+        [System.IO.Stream] $file = $null;
+        [System.Security.Cryptography.MD5] $md5 = $null;
+        try
         {
-            $file.Dispose()
+            $md5 = [System.Security.Cryptography.MD5]::Create()
+            $file = [System.IO.File]::OpenRead($filePath)
+            return [System.BitConverter]::ToString($md5.ComputeHash($file))
         }
+        finally
+        {
+            if ($file -ne $null)
+            {
+                $file.Dispose()
+            }
+        }
+    }
+    else {
+        throw "No MD5 support could be found, cannot continue"
     }
 }
 
@@ -129,15 +143,16 @@ if ((Test-Path $PSScriptRoot) -and !(Test-Path $TOOLS_DIR)) {
 # Make sure that packages.config exist.
 if (!(Test-Path $PACKAGES_CONFIG)) {
     Write-Verbose -Message "Downloading packages.config..."
-    try { (New-Object System.Net.WebClient).DownloadFile("http://cakebuild.net/download/bootstrapper/packages", $PACKAGES_CONFIG) } catch {
+    try { (New-Object System.Net.WebClient).DownloadFile("https://cakebuild.net/download/bootstrapper/packages", $PACKAGES_CONFIG) } catch {
         Throw "Could not download packages.config."
     }
 }
 
 # Try find NuGet.exe using Get-Command if not exists
-if (!(Test-Path $NUGET_EXE)) {
-    # Try grabbing using Get-Command
-    $NUGET_USING_GETCOMMAND = (Get-Command nuget)
+if (!($NUGET_EXE) -or !(Test-Path $NUGET_EXE)) {
+    # Try grabbing using Get-Command, note no exe extension to allow xplat
+    Write-Verbose -Message "Trying to find nuget.exe using Get-Command..."
+    $NUGET_USING_GETCOMMAND = (Get-Command "nuget")
     if($NUGET_USING_GETCOMMAND) {
         $NUGET_EXE = $NUGET_USING_GETCOMMAND.Source
     }
