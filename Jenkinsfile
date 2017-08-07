@@ -7,7 +7,7 @@ pipeline {
         stage('Init') {
             steps {
                 echo 'Initializing...'
-                sh ("powershell -NonInteractive -NoProfile -ExecutionPolicy Bypass -Command \"& '.\\build.ps1' -Target \"Init\"\"")
+                sh ("powershell -NonInteractive -NoProfile -ExecutionPolicy Bypass -Command \"& '.\\build.ps1' -Target \"Init\"\" -Verbose ")
             }
         }
         stage('Build') {
