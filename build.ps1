@@ -55,11 +55,6 @@ Param(
     [string[]]$ScriptArgs
 )
 
-if((!$PSVersionTable.PSEdition) -or ($PSVersionTable.PSEdition -ne "Core"))
-{
-    $sysSecurity = [Reflection.Assembly]::LoadWithPartialName("System.Security")
-}
-
 function MD5HashFile([string] $filePath)
 {
     if ([string]::IsNullOrEmpty($filePath) -or !(Test-Path $filePath -PathType Leaf))
@@ -71,10 +66,10 @@ function MD5HashFile([string] $filePath)
     $getHashExists = Get-Command "Get-FileHash"
     if($getHashExists)
     {
-        return Get-FileHash -Path $filePath -Algorithm "MD5"
+        return (Get-FileHash -Path $filePath -Algorithm "MD5").Hash
     }    
     # Use System.Security.Cryptography.MD5 for MD5, if it exists
-    elseif($sysSecurity) 
+    elseif([System.Security.Cryptography.MD5]) 
     {
         [System.IO.Stream] $file = $null;
         [System.Security.Cryptography.MD5] $md5 = $null;
