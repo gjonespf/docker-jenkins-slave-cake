@@ -71,6 +71,13 @@ RUN apt-get -q update &&\
 
 # Pull PS modules as required
 
+# TZ Setup required for HTTPS to work correctly...
+RUN apt-get -q update &&\
+    DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata &&\
+    apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
+ENV TZ=Etc/GMT
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 #GOSU instead
 ARG GOSU_VERSION=1.10
 RUN wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-$(dpkg --print-architecture)" \
