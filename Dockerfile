@@ -87,6 +87,12 @@ COPY ./init.sh /scripts/init.sh
 RUN chmod 777 /scripts/init.sh
 COPY ./jenkins-user-setup.sh /scripts/jenkins-user-setup.sh
 RUN chmod 777 /scripts/jenkins-user-setup.sh
+
+# Alias missing from new versions
+RUN echo 'alias powershell="pwsh"' >> ~/.bashrc
+RUN echo -e '#!/bin/bash\n/usr/bin/pwsh $*' > /usr/bin/powershell && \
+    chmod +x /usr/bin/powershell
+
 # Need to use gosu instead...
 #TODO: Remove sudo?
 #USER jenkins
@@ -94,9 +100,4 @@ RUN chmod 777 /scripts/jenkins-user-setup.sh
 WORKDIR /home/jenkins
 EXPOSE 22
 CMD [ "/scripts/init.sh" ]
-#CMD ["sudo", "/usr/sbin/sshd", "-D"]
-
-# testing
-# docker pull jumanjiman/dotnet:latest
-# docker run --rm -it jumanjiman/dotnet:latest bash
 
