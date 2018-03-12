@@ -67,7 +67,9 @@ RUN apt-get -q update &&\
 
 
 # Cake install
-#RUN curl -Lsfo build.sh http://cakebuild.net/download/bootstrapper/linux && chmod a+x build.sh && ./build.sh
+WORKDIR /home/jenkins
+RUN curl -Lsfo build.sh http://cakebuild.net/download/bootstrapper/linux && chmod a+x build.sh && touch build.cake && ./build.sh &&\
+    cp tools/nuget.exe /usr/bin && chmod a+x /usr/bin/nuget.exe
 
 # Pull PS modules as required
 

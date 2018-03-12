@@ -1,0 +1,9 @@
+{
+  "Versioning": "gitver",
+  "DefaultTag": "latest",
+  "DefaultUser": "gavinjonespf",
+  "DefaultRemote": "pfdockerregistry-on.azurecr.io",
+  "IMAGE_NAME": "docker-publicweb-mediamanage-v2",
+  "IMAGE_DESC": "Media Manage v2 Template",
+  "IMAGE_URL": "http://example.com/testing"
+}
