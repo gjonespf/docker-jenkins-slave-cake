@@ -38,24 +38,26 @@ RUN apt-get -q update &&\
     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
     
 # Mono required for a bunch of things
-RUN apt-get -q update &&\
-    DEBIAN_FRONTEND="noninteractive" apt-get -y install mono-devel &&\
-    apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
+# Should be in toolbox
+# RUN apt-get -q update &&\
+#     DEBIAN_FRONTEND="noninteractive" apt-get -y install mono-devel &&\
+#     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
 
 #No longer working/required
 #RUN mozroots --import --sync
-RUN cert-sync /etc/ssl/certs/ca-certificates.crt
+#RUN cert-sync /etc/ssl/certs/ca-certificates.crt
 
 # This includes mono bits, useful for compiling
-RUN yes | certmgr -ssl -m https://go.microsoft.com \
-	&& yes | certmgr -ssl -m https://nugetgallery.blob.core.windows.net \
-	&& yes | certmgr -ssl -m https://nuget.org 
+# RUN yes | certmgr -ssl -m https://go.microsoft.com \
+# 	&& yes | certmgr -ssl -m https://nugetgallery.blob.core.windows.net \
+# 	&& yes | certmgr -ssl -m https://nuget.org 
     
 # Nuget install
+# Now on toolbox
 # TODO: tzdata needed for SSL to work, should probably be in base image also?
-RUN apt-get -q update &&\
-    DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata nuget unzip &&\
-    apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
+# RUN apt-get -q update &&\
+#     DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata nuget unzip &&\
+#     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
 
 # Docker user setup, doesn't seem to work correctly
 #RUN     addgroup docker && usermod -a -G docker jenkins
@@ -115,9 +117,4 @@ RUN chmod 777 /scripts/jenkins-user-setup.sh
 WORKDIR /home/jenkins
 EXPOSE 22
 CMD [ "/scripts/init.sh" ]
-#CMD ["sudo", "/usr/sbin/sshd", "-D"]
-
-# testing
-# docker pull jumanjiman/dotnet:latest
-# docker run --rm -it jumanjiman/dotnet:latest bash
 

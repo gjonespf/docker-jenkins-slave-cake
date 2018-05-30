@@ -63,7 +63,7 @@ function MD5HashFile([string] $filePath)
     }
 
     # Use Get-FileHash if support exists
-    $getHashExists = Get-Command "Get-FileHash"
+    $getHashExists = Get-Command "Get-FileHash" -ErrorAction SilentlyContinue
     if($getHashExists)
     {
         return (Get-FileHash -Path $filePath -Algorithm "MD5").Hash
