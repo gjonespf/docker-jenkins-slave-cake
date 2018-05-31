@@ -86,16 +86,16 @@ RUN chmod 777 /scripts/init.sh
 COPY ./scripts/jenkins-user-setup.sh /scripts/jenkins-user-setup.sh
 RUN chmod 777 /scripts/jenkins-user-setup.sh
 
-# Alias missing from new versions
-RUN echo 'alias powershell="pwsh"' >> ~/.bashrc
-RUN echo -e '#!/bin/bash\n/usr/bin/pwsh $*' > /usr/bin/powershell && \
-    chmod +x /usr/bin/powershell
-
 # Need to use gosu instead...
 #TODO: Remove sudo and go back to Jenkins user...
 #USER jenkins
 #RUN touch ~/.sudo_as_admin_successful
 WORKDIR /home/jenkins
+# Alias missing from new versions
+RUN echo 'alias powershell="pwsh"' >> /home/jenkins/.bashrc && chown 1000:1000 /home/jenkins/.bashrc
+RUN echo -e '#!/bin/bash\n/usr/bin/pwsh $*' > /usr/bin/powershell && \
+    chmod +x /usr/bin/powershell
+
 
 RUN mkdir -p /home/jenkins/init/ && chown 1000:1000 /home/jenkins/init/
 COPY scripts/init/*.sh /home/jenkins/init/
