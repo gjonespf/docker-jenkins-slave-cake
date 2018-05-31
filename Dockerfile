@@ -63,10 +63,12 @@ ARG GOSU_VERSION=1.10
 RUN wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-$(dpkg --print-architecture)" \
     && chmod +x /usr/local/bin/gosu
 
-COPY ./scripts/init.sh /scripts/init.sh
+COPY scripts/init.sh /scripts/init.sh
 RUN chmod 777 /scripts/init.sh
-COPY ./scripts/jenkins-user-setup.sh /scripts/jenkins-user-setup.sh
+COPY scripts/jenkins-user-setup.sh /scripts/jenkins-user-setup.sh
 RUN chmod 777 /scripts/jenkins-user-setup.sh
+COPY scripts/runbootstrap.sh /scripts/runbootstrap.sh
+RUN chmod 777 /scripts/runbootstrap.sh
 
 # Need to use gosu instead...
 #TODO: Remove sudo and go back to Jenkins user...
