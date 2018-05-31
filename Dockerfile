@@ -36,21 +36,6 @@ RUN useradd -m -d /home/jenkins -s /bin/sh jenkins &&\
 RUN apt-get -q update &&\
     DEBIAN_FRONTEND="noninteractive" apt-get install -y openssh-server git curl &&\
     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
-    
-#Any general tools
-# WORKDIR /home/jenkins/tools/
-# COPY    tools/packages.config packages.config
-# RUN     nuget install
-WORKDIR /home/jenkins/tools/
-COPY    tools/GitVersion* /home/jenkins/tools/
-
-#Gitversion
-# RUN     mkdir -p /usr/lib/GitVersion/
-# COPY    scripts/rungitversion.sh /usr/lib/GitVersion/rungitversion.sh
-# RUN     mv /home/jenkins/tools/GitVersion.CommandLine*/tools/* /usr/lib/GitVersion/ \
-#         && sed -i 's|lib/linux/x86_64|/usr/lib/GitVersion/lib/linux/x86_64|g' /usr/lib/GitVersion/LibGit2Sharp.dll.config \
-#         && chmod a+x /usr/lib/GitVersion/rungitversion.sh \
-#         && ln -s /usr/lib/GitVersion/rungitversion.sh /usr/sbin/gitversion
 
 # Cake install
 WORKDIR /usr/lib/cake
@@ -65,9 +50,6 @@ RUN mkdir -p /usr/lib/cake/ \
 # Pull PS modules as required
 RUN     nuget sources add -name "PSGallery" -Source "https://www.powershellgallery.com/api/v2/" \
         && mkdir -p /home/jenkins/.local/share/powershell/Modules
-# Do this in bootstrap script instead        
-# COPY    ./PSModules/packages.config /home/jenkins/.local/share/powershell/Modules/
-#RUN     cd /home/jenkins/.local/share/powershell/Modules/ && nuget install -ExcludeVersion
 
 # TZ Setup required for HTTPS to work correctly...
 RUN apt-get -q update &&\
@@ -93,7 +75,7 @@ RUN chmod 777 /scripts/jenkins-user-setup.sh
 WORKDIR /home/jenkins
 # Alias missing from new versions
 RUN echo 'alias powershell="pwsh"' >> /home/jenkins/.bashrc && chown 1000:1000 /home/jenkins/.bashrc
-RUN echo -e '#!/bin/bash\n/usr/bin/pwsh $*' > /usr/bin/powershell && \
+RUN echo '#!/bin/bash\n/usr/bin/pwsh $*' > /usr/bin/powershell && \
     chmod +x /usr/bin/powershell
 
 
