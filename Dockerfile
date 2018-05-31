@@ -69,6 +69,13 @@ RUN     nuget sources add -name "PSGallery" -Source "https://www.powershellgalle
 # COPY    ./PSModules/packages.config /home/jenkins/.local/share/powershell/Modules/
 #RUN     cd /home/jenkins/.local/share/powershell/Modules/ && nuget install -ExcludeVersion
 
+# TZ Setup required for HTTPS to work correctly...
+RUN apt-get -q update &&\
+    DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata &&\
+    apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
+ENV TZ=Etc/GMT
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 #GOSU instead
 ARG GOSU_VERSION=1.10
 RUN wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-$(dpkg --print-architecture)" \
@@ -78,6 +85,11 @@ COPY ./scripts/init.sh /scripts/init.sh
 RUN chmod 777 /scripts/init.sh
 COPY ./scripts/jenkins-user-setup.sh /scripts/jenkins-user-setup.sh
 RUN chmod 777 /scripts/jenkins-user-setup.sh
+
+# Alias missing from new versions
+RUN echo 'alias powershell="pwsh"' >> ~/.bashrc
+RUN echo -e '#!/bin/bash\n/usr/bin/pwsh $*' > /usr/bin/powershell && \
+    chmod +x /usr/bin/powershell
 
 # Need to use gosu instead...
 #TODO: Remove sudo and go back to Jenkins user...
