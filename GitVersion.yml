@@ -1,0 +1,4 @@
+branches: {}
+mode: ContinuousDelivery
+ignore:
+  sha: []

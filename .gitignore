@@ -1,0 +1,6 @@
+/tools
+!/tools/packages.config
+BuildVersion.json
+gitversion.properties
+.buildenv
+
