@@ -1,3 +1,4 @@
+#!/usr/bin/pwsh
 ##########################################################################
 # This is the Cake bootstrapper script for PowerShell.
 # This file was downloaded from https://github.com/cake-build/resources
@@ -5,14 +6,11 @@
 ##########################################################################
 
 <#
-
 .SYNOPSIS
 This is a Powershell script to bootstrap a Cake build.
-
 .DESCRIPTION
 This Powershell script will download NuGet if missing, restore NuGet tools (including Cake)
 and execute your Cake build script with the parameters you provide.
-
 .PARAMETER Script
 The build script to execute.
 .PARAMETER Target
@@ -32,15 +30,13 @@ Tells Cake to use the Mono scripting engine.
 Skips restoring of packages.
 .PARAMETER ScriptArgs
 Remaining arguments are added here.
-
 .LINK
-https://cakebuild.net
-
+http://cakebuild.net
 #>
 
 [CmdletBinding()]
 Param(
-    [string]$Script = "build.cake",
+    [string]$Script = "setup.cake",
     [string]$Target = "Default",
     [ValidateSet("Release", "Debug")]
     [string]$Configuration = "Release",
@@ -55,6 +51,7 @@ Param(
     [string[]]$ScriptArgs
 )
 
+[Reflection.Assembly]::LoadWithPartialName("System.Security") | Out-Null
 function MD5HashFile([string] $filePath)
 {
     if ([string]::IsNullOrEmpty($filePath) -or !(Test-Path $filePath -PathType Leaf))
@@ -62,33 +59,20 @@ function MD5HashFile([string] $filePath)
         return $null
     }
 
-    # Use Get-FileHash if support exists
-    $getHashExists = Get-Command "Get-FileHash" -ErrorAction SilentlyContinue
-    if($getHashExists)
+    [System.IO.Stream] $file = $null;
+    [System.Security.Cryptography.MD5] $md5 = $null;
+    try
     {
-        return (Get-FileHash -Path $filePath -Algorithm "MD5").Hash
-    }    
-    # Use System.Security.Cryptography.MD5 for MD5, if it exists
-    elseif([System.Security.Cryptography.MD5]) 
-    {
-        [System.IO.Stream] $file = $null;
-        [System.Security.Cryptography.MD5] $md5 = $null;
-        try
-        {
-            $md5 = [System.Security.Cryptography.MD5]::Create()
-            $file = [System.IO.File]::OpenRead($filePath)
-            return [System.BitConverter]::ToString($md5.ComputeHash($file))
-        }
-        finally
-        {
-            if ($file -ne $null)
-            {
-                $file.Dispose()
-            }
-        }
+        $md5 = [System.Security.Cryptography.MD5]::Create()
+        $file = [System.IO.File]::OpenRead($filePath)
+        return [System.BitConverter]::ToString($md5.ComputeHash($file))
     }
-    else {
-        throw "No MD5 support could be found, cannot continue"
+    finally
+    {
+        if ($file -ne $null)
+        {
+            $file.Dispose()
+        }
     }
 }
 
@@ -99,21 +83,19 @@ if(!$PSScriptRoot){
 }
 
 $TOOLS_DIR = Join-Path $PSScriptRoot "tools"
-$ADDINS_DIR = Join-Path $TOOLS_DIR "Addins"
-$MODULES_DIR = Join-Path $TOOLS_DIR "Modules"
 $NUGET_EXE = Join-Path $TOOLS_DIR "nuget.exe"
 $CAKE_EXE = Join-Path $TOOLS_DIR "Cake/Cake.exe"
 $NUGET_URL = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
 $PACKAGES_CONFIG = Join-Path $TOOLS_DIR "packages.config"
 $PACKAGES_CONFIG_MD5 = Join-Path $TOOLS_DIR "packages.config.md5sum"
-$ADDINS_PACKAGES_CONFIG = Join-Path $ADDINS_DIR "packages.config"
-$MODULES_PACKAGES_CONFIG = Join-Path $MODULES_DIR "packages.config"
 
 # Should we use mono?
 $UseMono = "";
+$monoCmd = ""
 if($Mono.IsPresent) {
     Write-Verbose -Message "Using the Mono based scripting engine."
     $UseMono = "-mono"
+    $monoCmd = "mono"
 }
 
 # Should we use the new Roslyn?
@@ -138,25 +120,21 @@ if ((Test-Path $PSScriptRoot) -and !(Test-Path $TOOLS_DIR)) {
 # Make sure that packages.config exist.
 if (!(Test-Path $PACKAGES_CONFIG)) {
     Write-Verbose -Message "Downloading packages.config..."
-    try { (New-Object System.Net.WebClient).DownloadFile("https://cakebuild.net/download/bootstrapper/packages", $PACKAGES_CONFIG) } catch {
+    try { (New-Object System.Net.WebClient).DownloadFile("http://cakebuild.net/download/bootstrapper/packages", $PACKAGES_CONFIG) } catch {
         Throw "Could not download packages.config."
     }
 }
 
-# Try find NuGet.exe using Get-Command if not exists
+# Try to use Get-Command
 if (!($NUGET_EXE) -or !(Test-Path $NUGET_EXE)) {
-    # Try grabbing using Get-Command, note no exe extension to allow xplat
-    Write-Verbose -Message "Trying to find nuget.exe using Get-Command..."
-    $NUGET_USING_GETCOMMAND = (Get-Command "nuget")
-    if($NUGET_USING_GETCOMMAND) {
-        $NUGET_EXE = $NUGET_USING_GETCOMMAND.Source
-    }
+    Write-Verbose -Message "No nuget found, trying to search for it in the usual places"
+    $NUGET_EXE = (Get-Command "nuget").Source
 }
 
 # Try find NuGet.exe in path if not exists
 if (!(Test-Path $NUGET_EXE)) {
     Write-Verbose -Message "Trying to find nuget.exe in PATH..."
-    $existingPaths = $Env:Path -Split ';' | Where-Object { (![string]::IsNullOrEmpty($_)) -and (Test-Path $_ -PathType Container) }
+    $existingPaths = $Env:Path -Split ';' | Where-Object { (![string]::IsNullOrEmpty($_)) -and (Test-Path $_) }
     $NUGET_EXE_IN_PATH = Get-ChildItem -Path $existingPaths -Filter "nuget.exe" | Select -First 1
     if ($NUGET_EXE_IN_PATH -ne $null -and (Test-Path $NUGET_EXE_IN_PATH.FullName)) {
         Write-Verbose -Message "Found in PATH at $($NUGET_EXE_IN_PATH.FullName)."
@@ -167,6 +145,7 @@ if (!(Test-Path $NUGET_EXE)) {
 # Try download NuGet.exe if not exists
 if (!(Test-Path $NUGET_EXE)) {
     Write-Verbose -Message "Downloading NuGet.exe..."
+    $NUGET_EXE = Join-Path $TOOLS_DIR "nuget.exe"
     try {
         (New-Object System.Net.WebClient).DownloadFile($NUGET_URL, $NUGET_EXE)
     } catch {
@@ -175,7 +154,9 @@ if (!(Test-Path $NUGET_EXE)) {
 }
 
 # Save nuget.exe path to environment to be available to child processed
+$NUGET_EXE = (Resolve-Path $NUGET_EXE).Path
 $ENV:NUGET_EXE = $NUGET_EXE
+Write-Verbose "Using nuget at: $NUGET_EXE"
 
 # Restore tools from NuGet?
 if(-Not $SkipToolPackageRestore.IsPresent) {
@@ -191,51 +172,17 @@ if(-Not $SkipToolPackageRestore.IsPresent) {
     }
 
     Write-Verbose -Message "Restoring tools from NuGet..."
-    $NuGetOutput = Invoke-Expression "&`"$NUGET_EXE`" install -ExcludeVersion -OutputDirectory `"$TOOLS_DIR`""
+    #  -Source https://www.myget.org/F/cake/api/v3/index.json"
+    $NuGetOutput = Invoke-Expression "& $monoCmd `"$NUGET_EXE`" install -ExcludeVersion -PreRelease -OutputDirectory `"$TOOLS_DIR`" "
 
     if ($LASTEXITCODE -ne 0) {
-        Throw "An error occured while restoring NuGet tools. (Using Nuget: '$NUGET_EXE')"
+        Throw "An error occured while restoring NuGet tools."
     }
     else
     {
         $md5Hash | Out-File $PACKAGES_CONFIG_MD5 -Encoding "ASCII"
     }
     Write-Verbose -Message ($NuGetOutput | out-string)
-    
-    Pop-Location
-}
-
-# Restore addins from NuGet
-if (Test-Path $ADDINS_PACKAGES_CONFIG) {
-    Push-Location
-    Set-Location $ADDINS_DIR
-
-    Write-Verbose -Message "Restoring addins from NuGet..."
-    $NuGetOutput = Invoke-Expression "&`"$NUGET_EXE`" install -ExcludeVersion -OutputDirectory `"$ADDINS_DIR`""
-
-    if ($LASTEXITCODE -ne 0) {
-        Throw "An error occured while restoring NuGet addins."
-    }
-
-    Write-Verbose -Message ($NuGetOutput | out-string)
-
-    Pop-Location
-}
-
-# Restore modules from NuGet
-if (Test-Path $MODULES_PACKAGES_CONFIG) {
-    Push-Location
-    Set-Location $MODULES_DIR
-
-    Write-Verbose -Message "Restoring modules from NuGet..."
-    $NuGetOutput = Invoke-Expression "&`"$NUGET_EXE`" install -ExcludeVersion -OutputDirectory `"$MODULES_DIR`""
-
-    if ($LASTEXITCODE -ne 0) {
-        Throw "An error occured while restoring NuGet modules."
-    }
-
-    Write-Verbose -Message ($NuGetOutput | out-string)
-
     Pop-Location
 }
 
@@ -246,5 +193,7 @@ if (!(Test-Path $CAKE_EXE)) {
 
 # Start Cake
 Write-Host "Running build script..."
-Invoke-Expression "& `"$CAKE_EXE`" `"$Script`" -target=`"$Target`" -configuration=`"$Configuration`" -verbosity=`"$Verbosity`" $UseMono $UseDryRun $UseExperimental $ScriptArgs"
+
+Invoke-Expression "& $monoCmd `"$CAKE_EXE`" `"$Script`" -target=`"$Target`" -configuration=`"$Configuration`" -verbosity=`"$Verbosity`" $UseMono $UseDryRun $UseExperimental $ScriptArgs"
+
 exit $LASTEXITCODE

@@ -27,6 +27,9 @@ fi
 
 /scripts/jenkins-user-setup.sh
 
+echo -e "$(date) starting user bootstrap"
+gosu jenkins /scripts/runbootstrap.sh
+
 echo -e "$(date) starting jenkins-slave. found these env vars: \nIDPUB:$IDPUB"
 
 if [ -n "$1" ]

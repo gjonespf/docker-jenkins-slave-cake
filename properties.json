@@ -1,0 +1,9 @@
+{
+    "Versioning": "gitver",
+    "DefaultTag": "latest",
+    "DefaultUser": "gavinjonespf",
+    "DefaultRemote": "",
+    "ImageName": "docker-jenkins-slave-cake",
+    "ImageDescription": "Build setup for Jenkins agent",
+    "ImageUrl": "https://github.com/gjonespf/docker-jenkins-slave-cake"
+}
