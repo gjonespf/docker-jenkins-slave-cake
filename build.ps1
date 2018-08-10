@@ -1,15 +1,27 @@
+#!/usr/bin/pwsh
+##########################################################################
+# This is the Cake bootstrapper script for PowerShell.
+# This file was downloaded from https://github.com/cake-build/resources
+# Feel free to change this file to fit your needs.
+##########################################################################
+
 <#
 .SYNOPSIS
 This is a Powershell script to bootstrap a Cake build.
 .DESCRIPTION
 This Powershell script will download NuGet if missing, restore NuGet tools (including Cake)
 and execute your Cake build script with the parameters you provide.
+
+.PARAMETER Script
+The build script to execute.
+
 .PARAMETER Target
 The build script target to run.
 .PARAMETER Configuration
 The build configuration to use.
 .PARAMETER Verbosity
 Specifies the amount of information to be displayed.
+
 .PARAMETER WhatIf
 Performs a dry run of the build script.
 No tasks will be executed.
@@ -17,16 +29,28 @@ No tasks will be executed.
 Remaining arguments are added here.
 .LINK
 https://cakebuild.net
+
 #>
 
 [CmdletBinding()]
 Param(
+
+    [string]$Script = "setup.cake",
+
     [string]$Target = "Default",
     [ValidateSet("Release", "Debug")]
     [string]$Configuration = "Release",
     [ValidateSet("Quiet", "Minimal", "Normal", "Verbose", "Diagnostic")]
     [string]$Verbosity = "Verbose",
+
     [switch]$WhatIf,
+
+    [switch]$Experimental,
+    [Alias("DryRun","Noop")]
+    [switch]$WhatIf,
+    [switch]$Mono,
+    [switch]$SkipToolPackageRestore,
+
     [Parameter(Position=0,Mandatory=$false,ValueFromRemainingArguments=$true)]
     [string[]]$ScriptArgs
 )
@@ -136,3 +160,19 @@ $Arguments = @{
 Write-Host "Running build script..."
 Invoke-Expression "& $ShellPrefixExec `"$CakePath`" `"build.cake`" $Arguments $ScriptArgs"
 exit $LASTEXITCODE
+
+    Pop-Location
+}
+
+# Make sure that Cake has been installed.
+if (!(Test-Path $CAKE_EXE)) {
+    Throw "Could not find Cake.exe at $CAKE_EXE"
+}
+
+# Start Cake
+Write-Host "Running build script..."
+
+Invoke-Expression "& $monoCmd `"$CAKE_EXE`" `"$Script`" -target=`"$Target`" -configuration=`"$Configuration`" -verbosity=`"$Verbosity`" $UseMono $UseDryRun $UseExperimental $ScriptArgs"
+
+exit $LASTEXITCODE
+
