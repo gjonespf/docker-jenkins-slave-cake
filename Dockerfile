@@ -11,7 +11,7 @@ RUN apt-get -q update && apt-get install -y locales sudo &&\
     apt-get -q update &&\
     DEBIAN_FRONTEND="noninteractive" apt-get -q upgrade -y -o Dpkg::Options::="--force-confnew" --no-install-recommends &&\
     DEBIAN_FRONTEND="noninteractive" apt-get -q install -y -o Dpkg::Options::="--force-confnew" --no-install-recommends openssh-server &&\
-    apt-get -q autoremove &&\
+    apt-get -q autoremove -y &&\
     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin &&\
     sed -i 's|session    required     pam_loginuid.so|session    optional     pam_loginuid.so|g' /etc/pam.d/sshd &&\
     mkdir -p /var/run/sshd
@@ -36,35 +36,6 @@ RUN useradd -m -d /home/jenkins -s /bin/sh jenkins &&\
 RUN apt-get -q update &&\
     DEBIAN_FRONTEND="noninteractive" apt-get install -y openssh-server git curl &&\
     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
-    
-# Mono required for a bunch of things
-RUN apt-get -q update &&\
-    DEBIAN_FRONTEND="noninteractive" apt-get -y install mono-devel &&\
-    apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
-
-#No longer working/required
-#RUN mozroots --import --sync
-RUN cert-sync /etc/ssl/certs/ca-certificates.crt
-
-# This includes mono bits, useful for compiling
-RUN yes | certmgr -ssl -m https://go.microsoft.com \
-	&& yes | certmgr -ssl -m https://nugetgallery.blob.core.windows.net \
-	&& yes | certmgr -ssl -m https://nuget.org 
-# Nuget install
-RUN apt-get -q update &&\
-    DEBIAN_FRONTEND="noninteractive" apt-get -y install nuget &&\
-    apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
-
-# Docker user setup, doesn't seem to work correctly
-#RUN     addgroup docker && usermod -a -G docker jenkins
-#adduser jenkins docker
-
-# DotNet Core install
-# PowerShell Core install
-# ENV				DOTNET_PACKAGE dotnet-dev-1.0.4
-# ENV 			POWERSHELL_DOWNLOAD_URL https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-beta.2/powershell_6.0.0-beta.2-1ubuntu1.16.04.1_amd64.deb
-# Done as part of toolbox
-
 
 # Cake install
 WORKDIR /home/jenkins
@@ -72,6 +43,8 @@ RUN curl -Lsfo build.sh http://cakebuild.net/download/bootstrapper/linux && chmo
     cp tools/nuget.exe /usr/bin && chmod a+x /usr/bin/nuget.exe
 
 # Pull PS modules as required
+RUN     nuget sources add -name "PSGallery" -Source "https://www.powershellgallery.com/api/v2/" \
+        && mkdir -p /home/jenkins/.local/share/powershell/Modules
 
 # TZ Setup required for HTTPS to work correctly...
 RUN apt-get -q update &&\
@@ -85,21 +58,29 @@ ARG GOSU_VERSION=1.10
 RUN wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-$(dpkg --print-architecture)" \
     && chmod +x /usr/local/bin/gosu
 
-COPY ./init.sh /scripts/init.sh
+COPY scripts/init.sh /scripts/init.sh
 RUN chmod 777 /scripts/init.sh
-COPY ./jenkins-user-setup.sh /scripts/jenkins-user-setup.sh
+COPY scripts/jenkins-user-setup.sh /scripts/jenkins-user-setup.sh
 RUN chmod 777 /scripts/jenkins-user-setup.sh
-
-# Alias missing from new versions
-RUN echo 'alias powershell="pwsh"' >> ~/.bashrc
-RUN echo -e '#!/bin/bash\n/usr/bin/pwsh $*' > /usr/bin/powershell && \
-    chmod +x /usr/bin/powershell
+COPY scripts/runbootstrap.sh /scripts/runbootstrap.sh
+RUN chmod 777 /scripts/runbootstrap.sh
 
 # Need to use gosu instead...
-#TODO: Remove sudo?
+#TODO: Remove sudo and go back to Jenkins user...
 #USER jenkins
 #RUN touch ~/.sudo_as_admin_successful
 WORKDIR /home/jenkins
+# Alias missing from new versions
+RUN echo 'alias powershell="pwsh"' >> /home/jenkins/.bashrc && chown 1000:1000 /home/jenkins/.bashrc
+RUN echo '#!/bin/bash\n/usr/bin/pwsh $*' > /usr/bin/powershell && \
+    chmod +x /usr/bin/powershell
+
+
+RUN mkdir -p /home/jenkins/init/ && chown 1000:1000 /home/jenkins/init/
+COPY scripts/init/*.sh /home/jenkins/init/
+RUN chmod a+x /home/jenkins/init/*.sh
+RUN chown 1000:1000 /home/jenkins/init/*.sh
+
 EXPOSE 22
 CMD [ "/scripts/init.sh" ]
 

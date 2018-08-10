@@ -12,39 +12,72 @@ pipeline {
 
     stages {
         stage('Init') {
-            steps {
+            steps
+            {
                 echo 'Initializing...'
-                executeXplat "powershell -NonInteractive -NoProfile -ExecutionPolicy Bypass -Command \"& '.\\build.ps1' -Target \"Init\"\""
+                script {
+                    if (isUnix()) {
+                        echo 'Running on Unix...'
+                        sh "./build.sh -t \"Init\"" 
+                    } else  {
+                        echo 'Running on Windows...'
+                        bat "powershell -ExecutionPolicy Bypass -Command \"& './build.ps1' -Target \"Init\"\""
+                    }
+                }
             }
         }
         stage('Build') {
             steps {
                 echo "Running #${env.BUILD_ID} on ${env.JENKINS_URL}"
-                executeXplat 'Building...'
-                bat "powershell -NonInteractive -NoProfile -ExecutionPolicy Bypass -Command \"& '.\\build.ps1' -Target \"Build\"\""
+                echo 'Building...'
+                script {
+                    if (isUnix()) {
+                        sh "./build.sh -t \"Build\"" 
+                    } else  {
+                        bat "powershell -ExecutionPolicy Bypass -Command \"& './build.ps1' -Target \"Build\"\""
+                    }
+                }
             }
         }
         stage('Package') {
             steps {
                 echo 'Packaging...'
-                executeXplat "powershell -NonInteractive -NoProfile -ExecutionPolicy Bypass -Command \"& '.\\build.ps1' -Target \"Package\"\""
+
+                script {
+                    if (isUnix()) {
+                        sh "./build.sh -t \"Package\"" 
+                    } else  {
+                        bat "powershell -ExecutionPolicy Bypass -Command \"& './build.ps1' -Target \"Package\"\""
+                    }
+                }
             }
         }
         stage('Test'){
             steps {
                 echo 'Testing...'
-                executeXplat "powershell -NonInteractive -NoProfile -ExecutionPolicy Bypass -Command \"& '.\\build.ps1' -Target \"Test\"\""
+                script {
+                    if (isUnix()) {
+                        sh "./build.sh -t \"Test\"" 
+                    } else  {
+                        bat "powershell -ExecutionPolicy Bypass -Command \"& './build.ps1' -Target \"Test\"\""
+                    }
+                }
             }
         }
         stage('Publish') {
             steps {
                 echo 'Publishing...'
-                executeXplat "powershell -NonInteractive -NoProfile -ExecutionPolicy Bypass -Command \"& '.\\build.ps1' -Target \"Publish\"\""
+                script {
+                    if (isUnix()) {
+                        sh "./build.sh -t \"Publish\"" 
+                    } else  {
+                        bat "powershell -ExecutionPolicy Bypass -Command \"& './build.ps1' -Target \"Publish\"\""
+                    }
+                }
             }
         }
     }
 
-    
     post {
         always {
             archiveArtifacts artifacts: '**/.buildenv/$BUILD_ID/**', fingerprint: true
