@@ -3,7 +3,7 @@
   "DefaultTag": "latest",
   "DefaultUser": "gavinjonespf",
   "DefaultRemote": "pfdockerregistry-on.azurecr.io",
-  "IMAGE_NAME": "docker-publicweb-mediamanage-v2",
-  "IMAGE_DESC": "Media Manage v2 Template",
+  "IMAGE_NAME": "docker-jenkins-slave-cake",
+  "IMAGE_DESC": "Jenkins Build template including dotnet, mono and Cake basics",
   "IMAGE_URL": "http://example.com/testing"
 }
