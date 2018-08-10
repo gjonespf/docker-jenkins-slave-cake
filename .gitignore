@@ -3,3 +3,4 @@
 tools/
 
 .buildenv
+Assembly*Version.json
