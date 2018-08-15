@@ -80,11 +80,19 @@ RUN echo 'alias powershell="pwsh"' >> /home/jenkins/.bashrc && chown 1000:1000 /
 RUN echo '#!/bin/bash\n/usr/bin/pwsh $*' > /usr/bin/powershell && \
     chmod +x /usr/bin/powershell
 
+# Some placeholder dirs to ensure perms
+RUN mkdir -p /home/jenkins/.local/share/powershell/Modules
+RUN mkdir -p /home/jenkins/.docker
+RUN mkdir -p /home/jenkins/.mono
 
 RUN mkdir -p /home/jenkins/init/ && chown 1000:1000 /home/jenkins/init/
 COPY scripts/init/*.sh /home/jenkins/init/
+COPY scripts/rootinit/*.sh /home/jenkins/rootinit/
+RUN chown -R 1000:1000 /home/jenkins/*
 RUN chmod a+x /home/jenkins/init/*.sh
 RUN chown 1000:1000 /home/jenkins/init/*.sh
+RUN chmod a+x /home/jenkins/rootinit/*.sh
+RUN chown root:root /home/jenkins/rootinit/*.sh
 
 EXPOSE 22
 CMD [ "/scripts/init.sh" ]

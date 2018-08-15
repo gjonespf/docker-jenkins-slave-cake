@@ -27,6 +27,9 @@ fi
 
 /scripts/jenkins-user-setup.sh
 
+chown -R jenkins:jenkins /home/jenkins/.*
+/scripts/runrootbootstrap.sh
+
 echo -e "$(date) starting user bootstrap"
 gosu jenkins /scripts/runbootstrap.sh
 
