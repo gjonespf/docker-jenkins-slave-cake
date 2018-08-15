@@ -9,9 +9,6 @@ def executeXplat(commandString) {
 
 pipeline {
     agent { label 'xplat-cake' } 
-    environment { 
-        CC = 'clang'
-    }
 
     stages {
         stage('Init') {
@@ -45,6 +42,7 @@ pipeline {
         stage('Package') {
             steps {
                 echo 'Packaging...'
+
                 script {
                     if (isUnix()) {
                         sh "./build.sh -t \"Package\"" 

@@ -38,14 +38,9 @@ RUN apt-get -q update &&\
     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
 
 # Cake install
-WORKDIR /usr/lib/cake
-COPY    scripts/runcake.sh /usr/lib/cake/runcake.sh
-RUN mkdir -p /usr/lib/cake/ \
-    && curl -Lsfo "/usr/lib/cake/packages.config" http://cakebuild.net/download/bootstrapper/packages \
-    && cd /usr/lib/cake \
-    && nuget install -ExcludeVersion \
-    && chmod a+x /usr/lib/cake/runcake.sh \
-    && ln -s /usr/lib/cake/runcake.sh /usr/sbin/cake
+WORKDIR /home/jenkins
+RUN curl -Lsfo build.sh http://cakebuild.net/download/bootstrapper/linux && chmod a+x build.sh && touch build.cake && ./build.sh &&\
+    cp tools/nuget.exe /usr/bin && chmod a+x /usr/bin/nuget.exe
 
 # Pull PS modules as required
 RUN     nuget sources add -name "PSGallery" -Source "https://www.powershellgallery.com/api/v2/" \
