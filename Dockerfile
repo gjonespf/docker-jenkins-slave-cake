@@ -69,6 +69,8 @@ COPY scripts/jenkins-user-setup.sh /scripts/jenkins-user-setup.sh
 RUN chmod 777 /scripts/jenkins-user-setup.sh
 COPY scripts/runbootstrap.sh /scripts/runbootstrap.sh
 RUN chmod 777 /scripts/runbootstrap.sh
+COPY scripts/runrootbootstrap.sh /scripts/runrootbootstrap.sh
+RUN chmod 777 /scripts/runrootbootstrap.sh
 
 # Need to use gosu instead...
 #TODO: Remove sudo and go back to Jenkins user...
