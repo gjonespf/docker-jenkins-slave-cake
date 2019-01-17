@@ -58,6 +58,11 @@ RUN apt-get -q update &&\
 ENV TZ=Etc/GMT
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
+# Update to latest dotnet
+RUN apt-get -q update &&\
+    DEBIAN_FRONTEND="noninteractive" apt-get -y update dotnet-host dotnet-sdk-2.2 &&\
+    apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
+
 #GOSU instead
 ARG GOSU_VERSION=1.10
 RUN wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-$(dpkg --print-architecture)" \
@@ -80,6 +85,9 @@ RUN echo 'alias powershell="pwsh"' >> /home/jenkins/.bashrc && chown 1000:1000 /
 RUN echo '#!/bin/bash\n/usr/bin/pwsh $*' > /usr/bin/powershell && \
     chmod +x /usr/bin/powershell
 
+# Install dotnet build tools
+RUN dotnet tool install Octopus.DotNet.Cli --global && dotnet tool update Octopus.DotNet.Cli --global
+RUN dotnet tool install Cake.Tool --global && dotnet tool update Cake.Tool --global
 
 RUN mkdir -p /home/jenkins/init/ && chown 1000:1000 /home/jenkins/init/
 COPY scripts/init/*.sh /home/jenkins/init/
