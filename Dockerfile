@@ -60,7 +60,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Update to latest dotnet
 RUN apt-get -q update &&\
-    DEBIAN_FRONTEND="noninteractive" apt-get -y update dotnet-host dotnet-sdk-2.2 &&\
+    DEBIAN_FRONTEND="noninteractive" apt-get -y upgrade dotnet-host dotnet-sdk-2.2 &&\
     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
 
 #GOSU instead
