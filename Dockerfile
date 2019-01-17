@@ -84,6 +84,7 @@ WORKDIR /home/jenkins
 RUN echo 'alias powershell="pwsh"' >> /home/jenkins/.bashrc && chown 1000:1000 /home/jenkins/.bashrc
 RUN echo '#!/bin/bash\n/usr/bin/pwsh $*' > /usr/bin/powershell && \
     chmod +x /usr/bin/powershell
+RUN echo 'export PATH="$PATH:$HOME/.dotnet/tools"' >> /home/jenkins/.bashrc && chown 1000:1000 /home/jenkins/.bashrc
 
 # Install dotnet build tools
 RUN dotnet tool install Octopus.DotNet.Cli --global && dotnet tool update Octopus.DotNet.Cli --global
