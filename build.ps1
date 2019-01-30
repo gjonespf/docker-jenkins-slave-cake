@@ -92,8 +92,9 @@ $PACKAGES_CONFIG_MD5 = Join-Path $TOOLS_DIR "packages.config.md5sum"
 # Should we use mono?
 $UseMono = "";
 $monoCmd = ""
-if($Mono.IsPresent) {
-    Write-Verbose -Message "Using the Mono based scripting engine."
+# FIXME: Temporarily, if mono exists use it until we can sort out pwsh/.net core
+if($Mono.IsPresent -or (Get-Command "mono" -ErrorAction SilentlyContinue)) {
+    Write-Host -Message "Using the Mono based scripting engine."
     $UseMono = "-mono"
     $monoCmd = "mono"
 }
@@ -127,17 +128,17 @@ if (!(Test-Path $PACKAGES_CONFIG)) {
 
 # Try to use Get-Command
 if (!($NUGET_EXE) -or !(Test-Path $NUGET_EXE)) {
-    Write-Verbose -Message "No nuget found, trying to search for it in the usual places"
+    Write-Host -Message "No nuget found, trying to search for it in the usual places"
     $NUGET_EXE = (Get-Command "nuget").Source
 }
 
 # Try find NuGet.exe in path if not exists
 if (!(Test-Path $NUGET_EXE)) {
-    Write-Verbose -Message "Trying to find nuget.exe in PATH..."
+    Write-Host -Message "Trying to find nuget.exe in PATH..."
     $existingPaths = $Env:Path -Split ';' | Where-Object { (![string]::IsNullOrEmpty($_)) -and (Test-Path $_) }
     $NUGET_EXE_IN_PATH = Get-ChildItem -Path $existingPaths -Filter "nuget.exe" | Select -First 1
     if ($NUGET_EXE_IN_PATH -ne $null -and (Test-Path $NUGET_EXE_IN_PATH.FullName)) {
-        Write-Verbose -Message "Found in PATH at $($NUGET_EXE_IN_PATH.FullName)."
+        Write-Host -Message "Found in PATH at $($NUGET_EXE_IN_PATH.FullName)."
         $NUGET_EXE = $NUGET_EXE_IN_PATH.FullName
     }
 }
@@ -167,13 +168,23 @@ if(-Not $SkipToolPackageRestore.IsPresent) {
     [string] $md5Hash = MD5HashFile($PACKAGES_CONFIG)
     if((!(Test-Path $PACKAGES_CONFIG_MD5)) -Or
       ($md5Hash -ne (Get-Content $PACKAGES_CONFIG_MD5 ))) {
-        Write-Verbose -Message "Missing or changed package.config hash..."
-        Remove-Item * -Recurse -Exclude packages.config,nuget.exe
+        Write-Host -Message "Missing or changed package.config hash..."
+        foreach($dir in $(gci * -Directory))
+        {
+            Write-Host "Removing directory: $($dir.FullName)"
+            Get-Childitem $dir.FullName -Recurse | Remove-Item -Recurse -Force -Confirm:$false
+            Remove-Item -Path $dir -Recurse -Force -Confirm:$false
+        }
     }
 
-    Write-Verbose -Message "Restoring tools from NuGet..."
+    Write-Host -Message "Restoring tools from NuGet..."
     #  -Source https://www.myget.org/F/cake/api/v3/index.json"
-    $NuGetOutput = Invoke-Expression "& $monoCmd `"$NUGET_EXE`" install -ExcludeVersion -PreRelease -OutputDirectory `"$TOOLS_DIR`" "
+    $nugetMono = $monoCmd
+    # Don't run mono if on native
+    if($NUGET_EXE -match "/usr/bin") {
+        $nugetMono = ""
+    }
+    $NuGetOutput = Invoke-Expression "& $nugetMono `"$NUGET_EXE`" install -ExcludeVersion -PreRelease -OutputDirectory `"$TOOLS_DIR`" "
 
     if ($LASTEXITCODE -ne 0) {
         Throw "An error occured while restoring NuGet tools."
@@ -194,6 +205,10 @@ if (!(Test-Path $CAKE_EXE)) {
 # Start Cake
 Write-Host "Running build script..."
 
-Invoke-Expression "& $monoCmd `"$CAKE_EXE`" `"$Script`" -target=`"$Target`" -configuration=`"$Configuration`" -verbosity=`"$Verbosity`" $UseMono $UseDryRun $UseExperimental $ScriptArgs"
+$buildCmd = "& $monoCmd `"$CAKE_EXE`" `"$Script`" -target=`"$Target`" -configuration=`"$Configuration`" -verbosity=`"$Verbosity`" $UseMono $UseDryRun $UseExperimental $ScriptArgs"
+Write-Verbose "Using Build Command:"
+Write-Verbose "$buildCmd"
+Invoke-Expression $buildCmd
+# Invoke-Expression "& `"$CAKE_EXE`" `"$Script`" -target=`"$Target`" -configuration=`"$Configuration`" -verbosity=`"$Verbosity`" $UseMono $UseDryRun $UseExperimental $ScriptArgs"
 
 exit $LASTEXITCODE

@@ -1,9 +1,14 @@
 {
+    "GITCREDENTIALSID": "a82e5678-d85d-4b62-bd3a-0be31f486895",
+    "ProjectName": "docker-jenkins-slave-cake",
+    "ProjectCodeName": "docker-jenkins-slave-cake",
+    "ProjectDescription": "Basic setup for jenkins build agent",
+    "ProjectUrl": "https://github.com/gjonespf/docker-jenkins-slave-cake",
+    "SourceControlUrl": "https://github.com/gjonespf/docker-jenkins-slave-cake",
     "Versioning": "gitver",
     "DefaultTag": "latest",
     "DefaultUser": "gavinjonespf",
-    "DefaultRemote": "",
-    "ImageName": "docker-jenkins-slave-cake",
-    "ImageDescription": "Build setup for Jenkins agent",
-    "ImageUrl": "https://github.com/gjonespf/docker-jenkins-slave-cake"
+    "DefaultRemote": "pfdockerregistry-on.azurecr.io",
+    "SkipTestCode": "true",
+    "SkipTestUnit": "true"
 }
