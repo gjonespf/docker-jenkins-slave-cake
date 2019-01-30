@@ -37,7 +37,7 @@ RUN apt-get -q update &&\
     DEBIAN_FRONTEND="noninteractive" apt-get install -y openssh-server git curl &&\
     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
 
-# Cake install
+# Cake install - todo replace with dotnet tool instead
 WORKDIR /usr/lib/cake
 COPY    scripts/runcake.sh /usr/lib/cake/runcake.sh
 RUN mkdir -p /usr/lib/cake/ \
@@ -52,15 +52,16 @@ RUN     nuget sources add -name "PSGallery" -Source "https://www.powershellgalle
         && mkdir -p /home/jenkins/.local/share/powershell/Modules
 
 # TZ Setup required for HTTPS to work correctly...
+# gss-ntlmssp to ensure kerberos NTLM works
 RUN apt-get -q update &&\
-    DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata &&\
+    DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata gss-ntlmssp &&\
     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
 ENV TZ=Etc/GMT
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# Update to latest dotnet, including libcurl due to SSL issues otherwise
+# Update to latest dotnet and pwsh, including libcurl due to SSL issues otherwise
 RUN apt-get -q update &&\
-    DEBIAN_FRONTEND="noninteractive" apt-get -y upgrade dotnet-host dotnet-sdk-2.2 libcurl3 &&\
+    DEBIAN_FRONTEND="noninteractive" apt-get -y upgrade libcurl3 dotnet-host dotnet-sdk-2.2 powershell &&\
     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
 
 #GOSU instead
@@ -87,10 +88,12 @@ RUN echo '#!/bin/bash\n/usr/bin/pwsh $*' > /usr/bin/powershell && \
 RUN echo 'export PATH="$PATH:$HOME/.dotnet/tools"' >> /home/jenkins/.bashrc && chown 1000:1000 /home/jenkins/.bashrc
 
 # Install dotnet build tools
+# https://www.nuget.org/packages/Octopus.DotNet.Cli/
 RUN dotnet tool install Octopus.DotNet.Cli --global && dotnet tool update Octopus.DotNet.Cli --global
+# https://www.nuget.org/packages/Cake.Tool/
 RUN dotnet tool install Cake.Tool --global && dotnet tool update Cake.Tool --global
-RUN dotnet tool install Gitversion.Tool --global --version 4.0.1-beta1-58
-# && dotnet tool update Gitversion.Tool --global
+# https://www.nuget.org/packages/GitVersion.Tool/
+RUN dotnet tool install Gitversion.Tool --global --version 4.0.1-beta1-59
 
 RUN mkdir -p /home/jenkins/init/ && chown 1000:1000 /home/jenkins/init/
 COPY scripts/init/*.sh /home/jenkins/init/
