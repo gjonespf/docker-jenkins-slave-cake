@@ -58,9 +58,9 @@ RUN apt-get -q update &&\
 ENV TZ=Etc/GMT
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# Update to latest dotnet
+# Update to latest dotnet, including libcurl due to SSL issues otherwise
 RUN apt-get -q update &&\
-    DEBIAN_FRONTEND="noninteractive" apt-get -y upgrade dotnet-host dotnet-sdk-2.2 &&\
+    DEBIAN_FRONTEND="noninteractive" apt-get -y upgrade dotnet-host dotnet-sdk-2.2 libcurl3 &&\
     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
 
 #GOSU instead
@@ -89,6 +89,8 @@ RUN echo 'export PATH="$PATH:$HOME/.dotnet/tools"' >> /home/jenkins/.bashrc && c
 # Install dotnet build tools
 RUN dotnet tool install Octopus.DotNet.Cli --global && dotnet tool update Octopus.DotNet.Cli --global
 RUN dotnet tool install Cake.Tool --global && dotnet tool update Cake.Tool --global
+RUN dotnet tool install Gitversion.Tool --global --version 4.0.1-beta1-58
+# && dotnet tool update Gitversion.Tool --global
 
 RUN mkdir -p /home/jenkins/init/ && chown 1000:1000 /home/jenkins/init/
 COPY scripts/init/*.sh /home/jenkins/init/
