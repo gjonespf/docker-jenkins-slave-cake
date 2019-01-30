@@ -94,11 +94,15 @@ RUN dotnet tool install Octopus.DotNet.Cli --global && dotnet tool update Octopu
 RUN dotnet tool install Cake.Tool --global && dotnet tool update Cake.Tool --global
 # https://www.nuget.org/packages/GitVersion.Tool/
 RUN dotnet tool install Gitversion.Tool --global --version 4.0.1-beta1-59
+RUN apt-get -q update && apt-get install -y libgit2-dev
 
 RUN mkdir -p /home/jenkins/init/ && chown 1000:1000 /home/jenkins/init/
 COPY scripts/init/*.sh /home/jenkins/init/
 RUN chmod a+x /home/jenkins/init/*.sh
 RUN chown 1000:1000 /home/jenkins/init/*.sh
+
+# Clean up
+RUN apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin && apt-get -q autoremove -y
 
 EXPOSE 22
 CMD [ "/scripts/init.sh" ]
