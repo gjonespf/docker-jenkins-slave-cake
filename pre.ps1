@@ -56,16 +56,29 @@ function Invoke-GitFetchRemoteBranches($CurrentBranch) {
 $currentBranch = Get-GitCurrentBranch
 $env:BRANCH_NAME=$env:GITBRANCH=$currentBranch
 
+# Enable nuget caching
+if($env:HTTP_PROXY) {
+    $nuget = Get-Command nuget
+    if($nuget)
+    {
+        Write-Host "Setting Nuget proxy to '$env:HTTP_PROXY'"
+        & $nuget config -set http_proxy=$env:HTTP_PROXY
+    }
+    else {
+        Write-Host "Couldn't find nuget to set cache"
+    }
+}
+
 # GitVersion Issues with PR builds mean clearing cache between builds is worth doing
 if(Test-Path ".git/gitversion_cache") {
-    Write-Host "Removing gitversion cache stopper, to ensure a clean build"
     Remove-Item -Recurse .git/gitversion_cache/* -ErrorAction SilentlyContinue | Out-Null
 }
 
 # Make sure we get new tool versions each build
 if(Test-Path "tools/packages.config.md5sum") {
-    Write-Host "Removing Cake.Recipe cache stopper, to ensure a clean build"
     Remove-Item "tools/packages.config.md5sum"
+    Get-ChildItem "tools/" -Exclude "tools/packages.config" -Hidden -Recurse | Remove-Item -Force
+    Remove-Item "tools/*" -Recurse -Exclude "tools/packages.config"
 }
 
 # TODO: Git fetch for gitversion issues
