@@ -60,8 +60,10 @@ ENV TZ=Etc/GMT
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Update to latest dotnet and pwsh, including libcurl due to SSL issues otherwise
+# libcurl3 - Needed for?
+# libcurl4
 RUN apt-get -q update &&\
-    DEBIAN_FRONTEND="noninteractive" apt-get -y upgrade libcurl3 libcurl4 dotnet-host dotnet-sdk-2.2 powershell &&\
+    DEBIAN_FRONTEND="noninteractive" apt-get -y upgrade dotnet-host dotnet-sdk-2.2 powershell &&\
     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
 
 #GOSU instead
