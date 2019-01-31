@@ -91,11 +91,11 @@ RUN echo 'export PATH="$PATH:$HOME/.dotnet/tools"' >> /home/jenkins/.bashrc && c
 
 # Install dotnet build tools
 # https://www.nuget.org/packages/Octopus.DotNet.Cli/
-RUN dotnet tool install Octopus.DotNet.Cli --global && dotnet tool update Octopus.DotNet.Cli --global
+RUN dotnet tool install Octopus.DotNet.Cli --global --tool-path /home/jenkins/.dotnet/tools/ && dotnet tool update Octopus.DotNet.Cli --global
 # https://www.nuget.org/packages/Cake.Tool/
-RUN dotnet tool install Cake.Tool --global && dotnet tool update Cake.Tool --global
+RUN dotnet tool install Cake.Tool --global --tool-path /home/jenkins/.dotnet/tools/ && dotnet tool update Cake.Tool --global
 # https://www.nuget.org/packages/GitVersion.Tool/
-RUN dotnet tool install Gitversion.Tool --global --version 4.0.1-beta1-59
+RUN dotnet tool install Gitversion.Tool --global --version 4.0.1-beta1-59 --tool-path /home/jenkins/.dotnet/tools/
 RUN apt-get -q update && apt-get install -y libgit2-dev
 
 RUN mkdir -p /home/jenkins/init/ && chown 1000:1000 /home/jenkins/init/
