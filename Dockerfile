@@ -89,13 +89,23 @@ RUN echo '#!/bin/bash\n/usr/bin/pwsh $*' > /usr/bin/powershell && \
     chmod +x /usr/bin/powershell
 RUN echo 'export PATH="$PATH:$HOME/.dotnet/tools"' >> /home/jenkins/.bashrc && chown 1000:1000 /home/jenkins/.bashrc
 
-# Install dotnet build tools
+# Install dotnet build tools - these can be installed per project also
+# Have global versions to allow for a minimum level of useful tools
+RUN dotnet tool install Cake.tool --version 0.33 -g
+RUN dotnet tool install Gitversion.Tool --version 5.0.1 -g
+
+# Some other useful global tools
+RUN dotnet tool install azure-storage-cli -g
+RUN dotnet tool install -g TheBlueSky.DotNet.Tools.SwiftHash
+RUN dotnet tool install -g dotnet-outdated
+
+# Have copies in a specific tool dir
 # https://www.nuget.org/packages/Octopus.DotNet.Cli/
-RUN dotnet tool install Octopus.DotNet.Cli --tool-path /home/jenkins/.dotnet/tools/
+#RUN dotnet tool install Octopus.DotNet.Cli --tool-path /home/jenkins/.dotnet/tools/
 # https://www.nuget.org/packages/Cake.Tool/
-RUN dotnet tool install Cake.tool --tool-path /home/jenkins/.dotnet/tools/
+#RUN dotnet tool install Cake.tool --tool-path /home/jenkins/.dotnet/tools/
 # https://www.nuget.org/packages/GitVersion.Tool/
-RUN dotnet tool install Gitversion.Tool --version 4.0.1-beta1-59 --tool-path /home/jenkins/.dotnet/tools/
+#RUN dotnet tool install Gitversion.Tool --version 5.0.1 --tool-path /home/jenkins/.dotnet/tools/
 
 # Further gitver requs
 RUN apt-get -q update && apt-get install -y libgit2-dev && apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin && apt-get -q autoremove -y
