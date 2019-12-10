@@ -63,7 +63,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # libcurl3 - Needed for?
 # libcurl4
 RUN apt-get -q update &&\
-    DEBIAN_FRONTEND="noninteractive" apt-get -y upgrade dotnet-host dotnet-sdk-2.2 powershell &&\
+    DEBIAN_FRONTEND="noninteractive" apt-get -y upgrade dotnet-host dotnet-sdk-3.1 powershell &&\
     apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin
 
 #GOSU instead
@@ -96,7 +96,20 @@ RUN dotnet tool install Octopus.DotNet.Cli --tool-path /home/jenkins/.dotnet/too
 RUN dotnet tool install Cake.tool --tool-path /home/jenkins/.dotnet/tools/
 # https://www.nuget.org/packages/GitVersion.Tool/
 RUN dotnet tool install Gitversion.Tool --version 4.0.1-beta1-59 --tool-path /home/jenkins/.dotnet/tools/
+
+# Further gitver requs
 RUN apt-get -q update && apt-get install -y libgit2-dev && apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin && apt-get -q autoremove -y
+RUN apt-get update && apt-get install -y --no-install-recommends \
+	libc6 \
+	zlib1g-dev \
+	libcomerr2 \
+	libc6-dev \
+	libgcrypt20 \
+	libkeyutils1 \
+	libcurl3-gnutls \
+	libsasl2-2 \
+	libgpg-error0 && apt-get -q clean -y && rm -rf /var/lib/apt/lists/* && rm -f /var/cache/apt/*.bin && apt-get -q autoremove -y
+
 RUN chown -R jenkins:jenkins /home/jenkins/ && chown -R jenkins:jenkins /home/jenkins/.local/
 RUN mkdir -p /home/jenkins/init/ && chown 1000:1000 /home/jenkins/init/
 COPY scripts/init/*.sh /home/jenkins/init/
