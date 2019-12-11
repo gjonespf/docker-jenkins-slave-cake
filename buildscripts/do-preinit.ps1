@@ -90,6 +90,19 @@ function Invoke-GitFetchRemoteBranches($CurrentBranch) {
     git pull
 }
 
+function Add-PathToSearchPath ($NewPath) {
+    $pathSeparator=[IO.Path]::PathSeparator
+    if($NewPath) {
+        $currentPath = [Environment]::GetEnvironmentVariable('PATH')
+        $currentPath = "$($currentPath)$($pathSeparator)$(($NewPath).Path)"
+        # Dedup
+        $currentPath = (($currentPath -Split $pathSeparator | Select-Object -Unique) -join $pathSeparator)
+        [Environment]::SetEnvironmentVariable('PATH', $currentPath, [EnvironmentVariableTarget]::Process)
+    } else {
+        Write-Warning "Couldn't resolve NewPath path correctly"
+    }
+}
+
 function Install-NugetCaching() {
     # Enable nuget caching
     if($env:HTTP_PROXY) {
@@ -180,20 +193,20 @@ function Invoke-NugetSourcesSetup()
     $pfRepoPassword = "$($env:LocalNugetPassword)"
 
     # TODO: Handle xplat nuget (mono?)
-    if($IsLinux)
-    {
-        $linkExists = Get-ChildItem ~/.nuget/ -ErrorAction SilentlyContinue | ?{ $_.LinkType -eq "SymbolicLink" -and $_.BaseName -eq "NuGet" }
-        if(!$linkExists -and (Test-Path ~/.config/NuGet/))
-        {
-            # Fix issues with mono/dotnet configs in
-            # cat ~/.config/NuGet/NuGet.Config
-            # cat ~/.nuget/NuGet/NuGet.Config
-            # https://github.com/NuGet/Home/issues/4413
-            Remove-Item ~/.nuget/NuGet -Recurse -ErrorAction SilentlyContinue
-            ln -s ~/.config/NuGet/ ~/.nuget/NuGet/
-            Remove-Item ~/.nuget/NuGet/nuget.config -ErrorAction SilentlyContinue
-        }
-    }
+    # if($IsLinux)
+    # {
+    #     $linkExists = Get-ChildItem ~/.nuget/ -ErrorAction SilentlyContinue | ?{ $_.LinkType -eq "SymbolicLink" -and $_.BaseName -eq "NuGet" }
+    #     if(!$linkExists -and (Test-Path ~/.config/NuGet/))
+    #     {
+    #         # Fix issues with mono/dotnet configs in
+    #         # cat ~/.config/NuGet/NuGet.Config
+    #         # cat ~/.nuget/NuGet/NuGet.Config
+    #         # https://github.com/NuGet/Home/issues/4413
+    #         Remove-Item ~/.nuget/NuGet -Recurse -ErrorAction SilentlyContinue
+    #         ln -s ~/.config/NuGet/ ~/.nuget/NuGet/
+    #         Remove-Item ~/.nuget/NuGet/nuget.config -ErrorAction SilentlyContinue
+    #     }
+    # }
 
     if($nuget)
     {
@@ -271,7 +284,58 @@ $env:BRANCH_NAME=$env:GITBRANCH=$currentBranch
 $isVSTSNode = $env:VSTS_AGENT
 $isJenkinsNode = $env:JENKINS_HOME
 
-# Install-PrePrerequisites
+function Install-PrePrerequisites {
+
+    # Take advantage of .net core 3 for tools
+    if(Get-Command dotnet -ErrorAction SilentlyContinue) {
+        $dotnetVers = [Version](dotnet --version)
+        if($dotnetVers.Major -ge 3) {
+            & dotnet tool restore
+        }
+    }
+
+    if(!(Get-Command nuget -ErrorAction SilentlyContinue)) {
+        if($IsLinux) {
+            $monoExists = Get-Command mono -ErrorAction SilentlyContinue
+            if($monoExists) {
+                wget https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
+                $nugetPath = Resolve-Path "./nuget.exe"
+            # Set up helper script to handle calling nuget via mono
+$nugetScript = @"
+#!/bin/sh
+$($monoExists.Path) $($nugetPath.Path) $@
+"@
+                $nugetScript = $nugetScript.Replace("`r`n","`n")
+                $nugetScript | Out-File -Encoding ASCII ./nuget
+                chmod a+x ./nuget
+            } else {
+                Write-Error "Nuget and mono not found, build will likely fail"
+            }
+        } else {
+            # Possibly install via choco?
+        }
+    }
+}
+
+# Currently setting up hacky shims because dotnet tool is a pita
+function Install-Helpers {
+
+    $pwshExists = Get-Command pwsh -ErrorAction SilentlyContinue
+    
+}
+
+# TODO: Handle xplat helper links for cake, gitversion?
+
+# Default path adjustments
+$toolPath = Resolve-Path "." -ErrorAction SilentlyContinue
+Add-PathToSearchPath -NewPath $toolPath.Path
+New-Item -Path .dotnet/tools -ItemType Directory | Out-Null
+$toolPath = Resolve-Path ".dotnet/tools" -ErrorAction SilentlyContinue
+Add-PathToSearchPath -NewPath $toolPath.Path
+
+Install-PrePrerequisites
+Install-Helpers
+
 Install-NugetCaching
 Clear-GitversionCache
 # These are set up as part of the build.dntool.ps1 now...
