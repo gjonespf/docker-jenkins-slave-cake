@@ -7,8 +7,13 @@ trigger:
 pr:
 - develop
 
-queue:
+# Requires docker build, dotnet tools
+pool:
   name: devinf
+  demands: 
+  - Agent.OS -equals Linux
+  - DOCKER_CHANNEL -equals stable
+  - dotnet
 
 variables:
   - group: "PFDev KeyVault Variables"
