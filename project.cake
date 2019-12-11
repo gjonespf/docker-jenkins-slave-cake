@@ -20,6 +20,7 @@ BuildParameters.Tasks.RestoreTask
     });
 
 BuildParameters.Tasks.BuildTask
+    .IsDependentOn("PFInit")
     .IsDependentOn("Invoke-DockerLogin")
 	.IsDependentOn("Build-Docker")
     .Does(() => {
@@ -34,6 +35,7 @@ Task("CodeTest")
         });
 
 BuildParameters.Tasks.PackageTask
+    .IsDependentOn("PFInit")
 	.IsDependentOn("Package-GenerateReleaseVersion")
 	.IsDependentOn("Package-Docker")
 	.IsDependentOn("Create-Nuget-Packages")
