@@ -181,7 +181,7 @@ function Invoke-NugetSourcesSetup()
 
     if($IsLinux)
     {
-        $linkExists = Get-ChildItem ~/.nuget/ | ?{ $_.LinkType -eq "SymbolicLink" -and $_.BaseName -eq "NuGet" }
+        $linkExists = Get-ChildItem ~/.nuget/ -ErrorAction SilentlyContinue | ?{ $_.LinkType -eq "SymbolicLink" -and $_.BaseName -eq "NuGet" }
         if(!$linkExists)
         {
             # Fix issues with mono/dotnet configs in
