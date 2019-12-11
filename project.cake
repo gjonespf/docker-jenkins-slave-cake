@@ -22,6 +22,7 @@ BuildParameters.Tasks.RestoreTask
 BuildParameters.Tasks.BuildTask
     .IsDependentOn("PFInit")
     .IsDependentOn("Invoke-DockerLogin")
+    .IsDependentOn("ConfigureDockerDetails")
 	.IsDependentOn("Build-Docker")
     .Does(() => {
     });
