@@ -134,9 +134,10 @@ function Invoke-DotnetToolShims ($DotnetToolPath, $DotnetToolDefinitions) {
     # TODO: Needs better xplat support
     $oldGitversion = Get-Command gitversion -ErrorAction SilentlyContinue
     $dotnetGitVersion = Get-Command dotnet-gitversion -ErrorAction SilentlyContinue
-    if(!($oldGitversion) -and $dotnetGitVersion -and $env:ChocolateyInstall) {
+    $chocoInstallPath = [Environment]::GetEnvironmentVariable("ChocolateyInstall")
+    if(!($oldGitversion) -and $dotnetGitVersion -and $chocoInstallPath) {
         # Create a hacky shim
-        $shimGen = "$($env:ChocolateyInstall)/tools/shimgen.exe"
+        $shimGen = "$($chocoInstallPath)/tools/shimgen.exe"
         & $shimGen -o="$($toolPath.Path)/gitversion.exe" -p="$($dotnetGitVersion.Path)"
     }
 

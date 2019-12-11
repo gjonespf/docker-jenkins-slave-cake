@@ -26,6 +26,13 @@ function Get-GitCurrentBranchVSTS {
         Write-Host "Get-GitCurrentBranchVSTS - Got VSTS PR Source Branch: $prSrc"
         $currentBranch = $prSrc
     }
+    if($env:PullRequestSource) {
+        $prSrc = $($env:PullRequestSource)
+        $prSrc = $prSrc -replace "refs/heads/", ""
+        
+        Write-Host "Get-GitCurrentBranchVSTS - Got VSTS PR Source Branch: $prSrc"
+        $currentBranch = $prSrc
+    }
     $currentBranch
 }
 

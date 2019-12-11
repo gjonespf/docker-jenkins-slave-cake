@@ -64,7 +64,8 @@ if($prId) {
     if($prSourceBranch -match "merge") {
         $prSourceBranch = $prSourceBranch -replace "refs/heads/", ""
     } else {
-        $prSourceBranch = $prSourceBranch.substring($prSourceBranch.indexOf('/', 5) + 1)
+        # TODO: This should be conditional, as it's too greedy atm
+        #$prSourceBranch = $prSourceBranch.substring($prSourceBranch.indexOf('/', 5) + 1)
     }
     Write-Host "PR Source: '$prSourceBranch'"
     if($isRunningInVSTS) {
