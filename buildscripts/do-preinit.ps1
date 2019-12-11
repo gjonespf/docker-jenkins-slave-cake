@@ -93,7 +93,7 @@ function Invoke-GitFetchRemoteBranches($CurrentBranch) {
 function Install-NugetCaching() {
     # Enable nuget caching
     if($env:HTTP_PROXY) {
-        $nuget = Get-Command nuget
+        $nuget = Get-Command nuget -ErrorAction SilentlyContinue
         if($nuget)
         {
             Write-Host "Setting Nuget proxy to '$env:HTTP_PROXY'"
