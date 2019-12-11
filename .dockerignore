@@ -1,3 +1,5 @@
-.buildenv
-.git
-.dotnet
+.buildenv/
+.git/
+.dotnet/
+BuildArtifacts/
+ReleaseArtifacts/

@@ -42,7 +42,7 @@ if($projDefPathExists) {
         Write-Verbose "properties - $name = $value"
         if(!([Environment]::GetEnvironmentVariable($name) -or $ForceEnv)) {
             Write-Information "Setting empty env var: $name = $value"
-            [Environment]::SetEnvironmentVariable($name, $value)
+            [Environment]::SetEnvironmentVariable($name, $value, [System.EnvironmentVariableTarget]::Process)
         }
     }
 }
@@ -101,18 +101,27 @@ function Invoke-DotnetToolUpdate ($DotnetToolPath, $DotnetToolDefinitions) {
             dotnet tool install $tool.PackageId --tool-path $DotnetToolPath --version $tool.Version
         }
     }
+}
 
-    # Hacky hack for path set to tools dir for now
-    $toolPath = Resolve-Path $DotnetToolPath -ErrorAction SilentlyContinue
+function Add-PathToSearchPath ($NewPath) {
     $pathSeparator=[IO.Path]::PathSeparator
-    if($toolPath) {
+    if($NewPath) {
         $currentPath = [Environment]::GetEnvironmentVariable('PATH')
-        $currentPath = "$($currentPath)$($pathSeparator)$(($toolPath).Path)"
+        $currentPath = "$($currentPath)$($pathSeparator)$(($NewPath).Path)"
         # Dedup
         $currentPath = (($currentPath -Split $pathSeparator | Select-Object -Unique) -join $pathSeparator)
         [Environment]::SetEnvironmentVariable('PATH', $currentPath, [EnvironmentVariableTarget]::Process)
     } else {
-        Write-Warning "Couldn't resolve dotnet tool path correctly"
+        Write-Warning "Couldn't resolve NewPath path correctly"
+    }
+}
+
+function Invoke-DotnetToolShims ($DotnetToolPath, $DotnetToolDefinitions) {
+    # Hacky hack for path set to tools dir for now
+    Add-PathToSearchPath -NewPath (Resolve-Path "$PSScriptPath").Path
+    $toolPath = Resolve-Path $DotnetToolPath -ErrorAction SilentlyContinue
+    if($toolPath) {
+        Add-PathToSearchPath -NewPath $toolPath
     }
 
     # Hacky hack for gitversion until you can nicely define where it should be
@@ -141,6 +150,9 @@ Write-Information "Using dotnet-tools versions:"
 Write-Information $dotnetToolsVersions
 
 Invoke-DotnetToolUpdate -DotnetToolPath $DotnetToolPath -DotnetToolDefinitions $dotnetToolsVersions
+
+# Hacky hacks gonna hack
+Invoke-DotnetToolShims -DotnetToolPath $DotnetToolPath -DotnetToolDefinitions $dotnetToolsVersions
 
 # Ensure we use the specific version we asked for
 $dotnetcake = Get-Command "dotnet-cake" -ErrorAction SilentlyContinue

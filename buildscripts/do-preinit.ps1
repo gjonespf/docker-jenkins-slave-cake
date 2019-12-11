@@ -179,10 +179,11 @@ function Invoke-NugetSourcesSetup()
     $pfRepoUser = "$($env:LocalNugetUserName)"
     $pfRepoPassword = "$($env:LocalNugetPassword)"
 
+    # TODO: Handle xplat nuget (mono?)
     if($IsLinux)
     {
         $linkExists = Get-ChildItem ~/.nuget/ -ErrorAction SilentlyContinue | ?{ $_.LinkType -eq "SymbolicLink" -and $_.BaseName -eq "NuGet" }
-        if(!$linkExists)
+        if(!$linkExists -and (Test-Path ~/.config/NuGet/))
         {
             # Fix issues with mono/dotnet configs in
             # cat ~/.config/NuGet/NuGet.Config

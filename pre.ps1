@@ -16,6 +16,52 @@ if($toolsDirs) {
     $toolsDirs | rm -Recurse
 }
 
+# Take advantage of .net core 3 for tools
+& dotnet tool restore
+
+# atm we still use nuget as part of build, so we need to deal with that here
+function Add-PathToSearchPath ($NewPath) {
+    $pathSeparator=[IO.Path]::PathSeparator
+    if($NewPath) {
+        $currentPath = [Environment]::GetEnvironmentVariable('PATH')
+        $currentPath = "$($currentPath)$($pathSeparator)$(($NewPath).Path)"
+        # Dedup
+        $currentPath = (($currentPath -Split $pathSeparator | Select-Object -Unique) -join $pathSeparator)
+        [Environment]::SetEnvironmentVariable('PATH', $currentPath, [EnvironmentVariableTarget]::Process)
+    } else {
+        Write-Warning "Couldn't resolve NewPath path correctly"
+    }
+}
+
+$pwshExists = Get-Command pwsh -ErrorAction SilentlyContinue
+if(!(Get-Command nuget -ErrorAction SilentlyContinue)) {
+    if($IsLinux) {
+        $monoExists = Get-Command mono -ErrorAction SilentlyContinue
+        if($monoExists) {
+            wget https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
+            $nugetPath = Resolve-Path "./nuget.exe"
+            # Set up helper script to handle calling nuget via mono
+$nugetScript = @"
+#!/bin/sh
+$($monoExists.Path) $($nugetPath.Path) $@
+"@
+            $nugetScript = $nugetScript.Replace("`r`n","`n")
+            $nugetScript | Out-File -Encoding ASCII ./nuget
+            chmod a+x ./nuget
+
+            # Add helper to path
+            $toolPath = Resolve-Path "." -ErrorAction SilentlyContinue
+            Add-PathToSearchPath -NewPath $toolPath.Path
+        } else {
+            Write-Error "Nuget and mono not found, build will likely fail"
+        }
+    } else {
+        # Possibly install via choco?
+    }
+}
+
+# TODO: Handle xplat helper links for cake, gitversion?
+
 ./buildscripts/do-preinit.ps1
 
 # SIG # Begin signature block
