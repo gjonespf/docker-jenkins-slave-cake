@@ -104,8 +104,13 @@ function Invoke-DotnetToolUpdate ($DotnetToolPath, $DotnetToolDefinitions) {
 
     # Hacky hack for path set to tools dir for now
     $toolPath = Resolve-Path $DotnetToolPath -ErrorAction SilentlyContinue
+    $pathSeparator=[IO.Path]::PathSeparator
     if($toolPath) {
-        $env:Path = $env:Path + ";"+($toolPath).Path
+        $currentPath = [Environment]::GetEnvironmentVariable('PATH')
+        $currentPath = "$($currentPath)$($pathSeparator)$(($toolPath).Path)"
+        # Dedup
+        $currentPath = (($currentPath -Split $pathSeparator | Select-Object -Unique) -join $pathSeparator)
+        [Environment]::SetEnvironmentVariable('PATH', $currentPath, [EnvironmentVariableTarget]::Process)
     } else {
         Write-Warning "Couldn't resolve dotnet tool path correctly"
     }

@@ -6,9 +6,9 @@
     "ProjectUrl": "https://github.com/gjonespf/docker-jenkins-slave-cake",
     "SourceControlUrl": "https://github.com/gjonespf/docker-jenkins-slave-cake",
     "Versioning": "gitver",
-    "DefaultTag": "latest",
-    "DefaultUser": "gavinjonespf",
-    "DefaultRemote": "pfdockerregistry-on.azurecr.io",
+    "DockerDefaultTag": "latest",
+    "DockerDefaultUser": "gavinjonespf",
+    "DockerDefaultRemote": "pfdockerregistry-on.azurecr.io",
     "SkipTestCode": "true",
     "SkipTestUnit": "true"
 }

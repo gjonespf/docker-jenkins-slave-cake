@@ -3,4 +3,4 @@
 BuildVersion.json
 gitversion.properties
 .buildenv
-
+.dotnet/
