@@ -5,9 +5,9 @@
 #===============
 function Get-GitCurrentBranchVSTS {
     $currentBranch = ""
-    if($env:Build_SourceBranchName) {
-        Write-Host "Get-GitCurrentBranchVSTS - Got VSTS Source Branch: $($env:Build_SourceBranchName)"
-        $currentBranch = $env:Build_SourceBranchName
+    if($env:BUILD_SOURCEBRANCHNAME) {
+        Write-Host "Get-GitCurrentBranchVSTS - Got VSTS Source Branch: $($env:BUILD_SOURCEBRANCHNAME)"
+        $currentBranch = $env:BUILD_SOURCEBRANCHNAME
 
         if($env:BUILD_SOURCEBRANCH) {
             $currentBranch = $env:BUILD_SOURCEBRANCH.substring($env:BUILD_SOURCEBRANCH.indexOf('/', 5) + 1)
@@ -18,9 +18,9 @@ function Get-GitCurrentBranchVSTS {
             Write-Host "Get-GitCurrentBranchVSTS - Set to env SOURCEBRANCHFULLNAME: $($currentBranch)"
         }
     }
-    if($env:System_PullRequest_SourceBranch)
+    if($env:SYSTEM_PULLREQUEST_SOURCEBRANCH)
     {
-        $prSrc = $($env:System_PullRequest_SourceBranch)
+        $prSrc = $($env:SYSTEM_PULLREQUEST_SOURCEBRANCH)
         $prSrc = $prSrc -replace "refs/heads/", ""
         
         Write-Host "Get-GitCurrentBranchVSTS - Got VSTS PR Source Branch: $prSrc"
@@ -38,6 +38,8 @@ function Get-GitCurrentBranch {
     if($devopsBranch) {
         $currentBranch = $devopsBranch
     }
+
+    
 
     $currentBranch
 }
@@ -273,17 +275,6 @@ function Invoke-CakeBootstrap() {
     }
 }
 
-#===============
-# Main
-#===============
-
-# Useful missing vars
-& "$PSScriptRoot/set-base-params.ps1"
-$currentBranch = Get-GitCurrentBranch
-$env:BRANCH_NAME=$env:GITBRANCH=$currentBranch
-$isVSTSNode = $env:VSTS_AGENT
-$isJenkinsNode = $env:JENKINS_HOME
-
 function Install-PrePrerequisites {
 
     # Take advantage of .net core 3 for tools
@@ -323,6 +314,18 @@ function Install-Helpers {
     $pwshExists = Get-Command pwsh -ErrorAction SilentlyContinue
     
 }
+
+#===============
+# Main
+#===============
+
+# Useful missing vars
+& "$PSScriptRoot/set-base-params.ps1"
+$currentBranch = Get-GitCurrentBranch
+$env:BRANCH_NAME=$env:GITBRANCH=$currentBranch
+$isVSTSNode = $env:VSTS_AGENT
+$isJenkinsNode = $env:JENKINS_HOME
+
 
 # TODO: Handle xplat helper links for cake, gitversion?
 
