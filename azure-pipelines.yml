@@ -8,7 +8,7 @@ pr:
 - develop
 
 queue:
-  name: Default
+  name: devinf
 
 variables:
   - group: "PFDev KeyVault Variables"
