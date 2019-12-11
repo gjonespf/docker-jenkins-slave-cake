@@ -118,7 +118,13 @@ function Add-PathToSearchPath ($NewPath) {
 
 function Invoke-DotnetToolShims ($DotnetToolPath, $DotnetToolDefinitions) {
     # Hacky hack for path set to tools dir for now
-    Add-PathToSearchPath -NewPath (Resolve-Path "$PSScriptPath").Path
+    $currentPath = Resolve-Path "$PSScriptRoot" -ErrorAction SilentlyContinue
+    if(!$currentPath) {
+        $currentPath = Resolve-Path "." -ErrorAction SilentlyContinue
+    }
+    if($currentPath) {
+        Add-PathToSearchPath -NewPath ($currentPath).Path
+    }
     $toolPath = Resolve-Path $DotnetToolPath -ErrorAction SilentlyContinue
     if($toolPath) {
         Add-PathToSearchPath -NewPath $toolPath
