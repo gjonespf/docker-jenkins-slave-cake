@@ -23,6 +23,7 @@ steps:
 - checkout: self
   clean: true
   persistCredentials: true
+
 - task: PowerShell@2
   displayName: Pre initialization
   inputs:
@@ -48,8 +49,8 @@ steps:
       Verbosity: $(Verbosity)
 
 - task: NuGetCommand@2
-  displayName: 'Authenticate with NuGet feed'
-  enabled: true
+  displayName: 'Authenticate with PFAuth NuGet feed'
+  enabled: false
   inputs:
     command: custom
     arguments: sources update -Name "PowerFarming Nuget" -Source "$(LocalNugetServerUrl)" -Username "$(LocalNugetUserName)" -Password "$(LocalNugetPassword)" -ConfigFile NuGet.Config -StorePasswordInClearText 
